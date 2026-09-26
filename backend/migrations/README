@@ -1,0 +1,3 @@
+LabForge database migrations.
+
+Use `alembic upgrade head` before starting a production API deployment.
