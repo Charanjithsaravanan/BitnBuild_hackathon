@@ -1,16 +1,32 @@
-# React + Vite
+# LabForge Participant UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Browser-based participant runner for the existing FastAPI Experiment API.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```powershell
+npm install
+npm run dev -- --port 5174
+```
 
-## React Compiler
+Open either:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- http://localhost:5174/?slug=your-published-slug
+- http://localhost:5174/your-published-slug
 
-## Expanding the ESLint configuration
+The app consumes the existing public endpoints:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- `GET /api/v1/public/experiments/{slug}`
+- `POST /api/v1/public/experiments/{slug}/sessions`
+- `POST /api/v1/public/sessions/{session_id}/responses`
+- `POST /api/v1/public/sessions/{session_id}/complete`
+
+## Current supported blocks
+
+- instruction
+- fixation
+- stimulus: text, image, audio, video, html, color
+- response
+- delay
+
+Reaction time is measured on the participant device with `performance.now()` and sent alongside server receipt timestamps. This is designed to preserve client timing; it does not claim laboratory-hardware equivalence.

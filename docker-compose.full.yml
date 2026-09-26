@@ -1,0 +1,64 @@
+services:
+  api:
+    build: ./backend
+    restart: unless-stopped
+    ports: ["8000:8000"]
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+psycopg://labforge:${POSTGRES_PASSWORD}@db:5432/labforge
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in root .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:5174}
+      REQUIRE_HTTPS_IN_PRODUCTION: ${REQUIRE_HTTPS_IN_PRODUCTION:-false}
+      TRUSTED_HOSTS: ${TRUSTED_HOSTS:-localhost,127.0.0.1}
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/ready')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: labforge
+      POSTGRES_USER: labforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in root .env}
+    volumes: ["labforge_pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labforge -d labforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["labforge_redis:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  researcher-ui:
+    build:
+      context: ./research-ui
+      args:
+        VITE_API_BASE_URL: http://localhost:8000/api/v1
+        VITE_PARTICIPANT_APP_URL: http://localhost:5174
+    restart: unless-stopped
+    ports: ["5173:80"]
+    depends_on: [api]
+  participant-ui:
+    build:
+      context: ./participant-ui
+      args:
+        VITE_API_BASE_URL: http://localhost:8000/api/v1
+    restart: unless-stopped
+    ports: ["5174:80"]
+    depends_on: [api]
+volumes:
+  labforge_pgdata:
+  labforge_redis:
